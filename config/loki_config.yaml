@@ -1,0 +1,57 @@
+lokig:
+  config: |
+    auth_enabled: false
+    ballast_bytes: 0
+    
+    server:
+      http_listen_port: 3100
+
+    distributor:
+      ring:
+        kvstore:
+            store: memberlist
+
+    memberlist:
+      join_members:
+        - {{ include "loki.fullname" . }}-memberlist
+
+    schema_config:
+      configs:
+        - from: 2022-01-11
+          store: boltdb-shipper
+          object_store: gcs
+          schema: v12
+          index:
+            prefix: loki_index_
+            period: 24h        
+
+    storage_config:
+      gcs:
+        bucket_name: ${gcs_bucket}
+      boltdb_shipper:
+        active_index_directory: /var/loki/index
+        cache_location: /var/loki/cache
+        shared_store: gcs         
+
+    chunk_store_config:
+      max_look_back_period: 9500h          
+
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 9500h      
+
+    frontend_worker:
+      frontend_address: {{ include "loki.queryFrontendFullname" . }}:9095   
+
+    compactor:
+      shared_store: gcs         
+
+    ruler:
+      rule_path: /tmp/loki/scratch
+      storage:
+        type: local
+        local:
+          directory: /etc/loki/rules
+      ring:
+        kvstore:
+          store: memberlist      

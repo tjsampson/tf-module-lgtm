@@ -1,0 +1,56 @@
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: ${cluster_issuer}
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8"
+  path: /
+  hosts:
+    - grafana.${cluster_issuer}
+  tls:
+    - hosts:
+        - grafana.${cluster_issuer}
+      secretName: grafana-tls
+replicas: 2
+adminUser: admin    
+grafana.ini:
+  paths:
+    data: /var/lib/grafana/
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+    provisioning: /etc/grafana/provisioning
+  analytics:
+    check_for_updates: true    
+    reporting_enabled: false
+  server:
+    domain: grafana.${cluster_issuer}
+    enforce_domain: true
+    root_url: https://grafana.${cluster_issuer}/
+  smtp:
+    host: ${relay_addr}:25
+    from_address: no-reply@grafana.${cluster_issuer}
+    from_name: Grafana Ops
+  users:
+    allow_sign_up: false
+    allow_org_create: false
+    viewers_can_edit: false
+    auto_assign_org_role: Viewer
+    editors_can_admin: false
+  dashboards:
+    min_refresh_interval: 30s
+  auth:
+    disable_login_form: false
+  security:
+    cookie_secure: true
+    strict_transport_security: true
+    x_xss_protection: true    
+  auth.generic_oauth:
+    enabled: true
+    name: ${oauth_provider_name}
+    allow_sign_up: true
+    scopes: "openid profile email"
+    auth_url: ${oauth_auth_url}
+    token_url: ${oauth_token_url}
+    api_url: ${oauth_api_url}
